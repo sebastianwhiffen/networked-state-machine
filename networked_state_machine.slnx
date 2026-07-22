@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/client/client.csproj" />
+    <Project Path="src/server/server.csproj" />
+    <Project Path="src/shared/shared.csproj" />
+  </Folder>
+  <Project Path="benchmarks/benchmarks.csproj" />
+</Solution>
