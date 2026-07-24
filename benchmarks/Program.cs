@@ -36,13 +36,6 @@ public static class Program
         byte[] batch = GC.AllocateArray<byte>(MAX_OP_SIZE_BYTES * NUM_OP_IN_BATCH, pinned: true);
         byte* batchPtr = (byte*)Unsafe.AsPointer(ref batch[0]);
 
-        operations.Select(op => (
-               key: op.Key,
-               bytes: string.Join(
-                   Environment.NewLine,
-                   op.Value.Chunk(8).Select(row => string.Join(" ", row.Select(bite => bite.ToString("X2"))))
-               )
-           )).ToList().ForEach(kv => Console.WriteLine($"Op name: {kv.key}, Op Bytes: {kv.bytes}"));
 
         int batchBufferLength = 0;
         for (int i = 0; i < NUM_OP_IN_BATCH; i++)
@@ -60,14 +53,30 @@ public static class Program
 
         while (true)
         {
+            ParseBuffer(batchPtr, batchBufferLength);
             loops++;
             if (sw.ElapsedMilliseconds > TEST_TIME_SECONDS) break;
         }
 
-        double throughput = loops * NUM_OP_IN_BATCH / (sw.ElapsedMilliseconds);
+        double throughput = loops * NUM_OP_IN_BATCH / sw.ElapsedMilliseconds;
 
         Console.WriteLine($"Throughput per m/s: {throughput}");
+
+        operations.Select(op => (
+           key: op.Key,
+           bytes: string.Join(
+               Environment.NewLine,
+               op.Value.Chunk(8).Select(row => string.Join(" ", row.Select(bite => bite.ToString("b")))))
+        )).ToList().ForEach(kv => Console.WriteLine($"Op name: {kv.key}, Op Bytes: {kv.bytes}"));
     }
+
+    static unsafe void ParseBuffer(byte* buffer, int bufferSizeInBytes)
+    {
+        int readHead = 0;
+        byte wow = *buffer;
+        Console.WriteLine(wow.ToString("b"));
+    }
+
     static OpType SelectOpType(int percent)
     {
         for (int i = 0; i < opTypeAppearancePercentages.Length; i++)
@@ -80,7 +89,6 @@ public static class Program
     {
         public int i;
     }
-
 
     public enum OpType : byte
     {
