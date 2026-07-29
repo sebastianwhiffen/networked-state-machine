@@ -5,9 +5,9 @@ namespace NetworkedStateMachine.Server;
 
 public static class Core
 {
-    const int BufMaxCount = 1024;
+    public const int BufMaxCount = 1024;
 
-    static readonly int PacketSizeBytes = 0;
+    public static readonly int PacketSizeBytes = 0;
 
     static readonly Packet[] ParsedPacks = new Packet[BufMaxCount];
     static int ParsedPackWriteHead = 0;
@@ -24,13 +24,13 @@ public static class Core
         InputBuf = GC.AllocateArray<byte>(PacketSizeBytes * BufMaxCount, pinned: true);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Flush()
     {
         ParsedPackWriteHead = 0;
         ParsedPackReadHead = 0;
         InputBufBytesToRead = 0;
-        InputBufWriteHead = 0;
-        InputBufReadHead = 0;
+        InputBufWriteHead = 0; InputBufReadHead = 0;
     }
 
     public static void Tick()
@@ -39,42 +39,58 @@ public static class Core
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static public void AppendInputBuf(byte[] bytes, int count)
+    static public void AppendInputBuf(byte[] bytes, int byteCount)
     {
         //We should always be consuming/flushing this buffer faster than we can fill it up.
         //if this fills up too often then double the array size.
-        int overflowByteCount = (count + InputBufWriteHead * PacketSizeBytes) - BufMaxCount;
-        if (overflowByteCount > 0) throw new IndexOutOfRangeException(
-        "Input buffer Overflow: inputs not being processed in time between frames.");
+        if (byteCount + InputBufWriteHead > BufMaxCount * PacketSizeBytes)
+        {
+            throw new IndexOutOfRangeException($"Input buffer Overflow: inputs not being processed in time between frames. byteCount :{byteCount}, writeHead{InputBufWriteHead}, greater than {BufMaxCount * PacketSizeBytes}");
+        }
 
-        Array.Copy(bytes, 0, InputBuf, InputBufWriteHead, count);
+        Array.Copy(bytes, 0, InputBuf, InputBufWriteHead, byteCount);
 
-        InputBufWriteHead += count;
-        InputBufBytesToRead += count;
+        InputBufWriteHead += byteCount;
+        InputBufBytesToRead += byteCount;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ParsePendingPackets()
     {
-        int i = 0;
-        while (i < InputBufBytesToRead)
+        while (InputBufReadHead < InputBufBytesToRead)
         {
-            ReadOnlySpan<byte> slice = InputBuf.AsSpan(InputBufReadHead, PacketSizeBytes);
-            var pack = MemoryMarshal.Read<Packet>(slice);
+            ReadOnlySpan<byte> slice =
+                InputBuf.AsSpan(InputBufReadHead, PacketSizeBytes);
+
+            Packet pack = MemoryMarshal.Read<Packet>(slice);
+
             ParsedPacks[ParsedPackWriteHead] = pack;
 
-            i++;
-            InputBufReadHead += PacketSizeBytes;
             ParsedPackWriteHead++;
+            InputBufReadHead += PacketSizeBytes;
         }
-        InputBufReadHead = 0;
     }
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct Packet(byte hi)
+public readonly struct Packet(short mdx, short mdy, short a)
 {
-    readonly public byte Hi = hi;
+    public readonly short MouseDeltaX = mdx;
+    public readonly short MouseDeltaY = mdy;
+    public readonly short Actions = a;
+
+}
+
+[Flags]
+public enum InputAction : ushort
+{
+    None = 0,
+    Forward = 1 << 0,
+    Backward = 1 << 1,
+    Left = 1 << 2,
+    Right = 1 << 3,
+    Jump = 1 << 4,
+    Attack = 1 << 5,
 }
 
 

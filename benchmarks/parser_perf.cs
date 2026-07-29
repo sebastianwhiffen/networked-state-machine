@@ -1,44 +1,55 @@
-
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using BenchmarkDotNet.Attributes;
 using NetworkedStateMachine.Server;
 
 namespace NetworkedStateMachine.Benchmarks;
 
+using BenchmarkDotNet.Attributes;
+
 [MemoryDiagnoser]
 public class ParserPerf
 {
+    private byte[] scratchBytes = null!;
 
-    [IterationCleanup]
-    public void Setup()
+    public static IEnumerable<int> PacketCounts =>
+    [
+        1,
+        Core.BufMaxCount / 2,
+        Core.BufMaxCount
+    ];
+
+    [ParamsSource(nameof(PacketCounts))]
+    public int PacketCount { get; set; }
+
+    [IterationCleanup(Targets = new[] { nameof(WriteInputBuff), nameof(ConsumePackets) })]
+    public void Flush() => Core.Flush();
+
+    //-----------------------------------------------------------------------
+
+    [IterationSetup(Target = nameof(WriteInputBuff))]
+    public unsafe void WriteSetup()
     {
-        Core.Flush();
+        scratchBytes = GC.AllocateArray<byte>(PacketCount * Core.PacketSizeBytes, pinned: true);
+        fixed (byte* ptr = scratchBytes) PacketCreator.CopyRandomPackets(ptr, PacketCount);
     }
 
     [Benchmark]
-    [ArgumentsSource(nameof(TestByteArrays))]
-    public void WriteInputBuff(byte[] bytes) =>
-        Core.AppendInputBuf(bytes, bytes.Length);
+    public void WriteInputBuff() => Core.AppendInputBuf(scratchBytes, scratchBytes.Length);
 
-    public static byte[][] TestByteArrays => [
-        "ok"u8.ToArray(),
-        "bigger"u8.ToArray(),
-        "really_big_hiiiiiiiiiiiii_wow_this_is_big!"u8.ToArray()
-    ];
-    
-    //set up with more realistic data
-    [IterationSetup(Targets = new[] { nameof(ConsumePackets) })]
+    //-----------------------------------------------------------------------
+
+    [IterationSetup(Target = nameof(ConsumePackets))]
     public unsafe void PacketSetup()
     {
-        int len = Marshal.SizeOf<Packet>();
-        byte[] arr = new byte[len];
+        Core.Flush();
+        int byteCount = PacketCount * Core.PacketSizeBytes;
 
-        var ptr = (byte*)Unsafe.AsPointer(ref arr[0]);
-        Marshal.StructureToPtr(new Packet(255), (nint)ptr, true);
-        Core.AppendInputBuf(arr, arr.Length);
+        scratchBytes = GC.AllocateArray<byte>(byteCount, pinned: true);
+        fixed (byte* ptr = scratchBytes) PacketCreator.CopyRandomPackets(ptr, PacketCount);
+
+        Core.AppendInputBuf(scratchBytes, byteCount);
     }
 
     [Benchmark]
     public void ConsumePackets() => Core.ParsePendingPackets();
+    //-----------------------------------------------------------------------
 }
