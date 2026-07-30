@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using NetworkedStateMachine.Shared;
 
 namespace NetworkedStateMachine.Server;
 
@@ -9,7 +10,7 @@ public static class Core
 
     public static readonly int PacketSizeBytes = 0;
 
-    static readonly Packet[] ParsedPacks = new Packet[BufMaxCount];
+    public static readonly Packet[] ParsedPacks = new Packet[BufMaxCount];
     static int ParsedPackWriteHead = 0;
     static int ParsedPackReadHead = 0;
 
@@ -57,41 +58,15 @@ public static class Core
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void ParsePendingPackets()
     {
-        while (InputBufReadHead < InputBufBytesToRead)
-        {
-            ReadOnlySpan<byte> slice =
-                InputBuf.AsSpan(InputBufReadHead, PacketSizeBytes);
+        ReadOnlySpan<byte> slice = InputBuf.AsSpan(InputBufReadHead, InputBufBytesToRead);
+        ReadOnlySpan<Packet> packs = MemoryMarshal.Cast<byte, Packet>(slice);
 
-            Packet pack = MemoryMarshal.Read<Packet>(slice);
-
-            ParsedPacks[ParsedPackWriteHead] = pack;
-
-            ParsedPackWriteHead++;
-            InputBufReadHead += PacketSizeBytes;
-        }
+        packs.CopyTo(ParsedPacks.AsSpan(ParsedPackWriteHead, packs.Length));
+        ParsedPackWriteHead += packs.Length;
     }
 }
 
-[StructLayout(LayoutKind.Sequential)]
-public readonly struct Packet(short mdx, short mdy, short a)
-{
-    public readonly short MouseDeltaX = mdx;
-    public readonly short MouseDeltaY = mdy;
-    public readonly short Actions = a;
 
-}
-
-[Flags]
-public enum InputAction : ushort
-{
-    None = 0,
-    Forward = 1 << 0,
-    Backward = 1 << 1,
-    Left = 1 << 2,
-    Right = 1 << 3,
-    Jump = 1 << 4,
-    Attack = 1 << 5,
-}
 
 
 

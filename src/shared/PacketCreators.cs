@@ -1,9 +1,6 @@
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using NetworkedStateMachine.Server;
 
-namespace NetworkedStateMachine.Benchmarks;
-
+namespace NetworkedStateMachine.Shared;
 
 public static class PacketCreator
 {
@@ -22,7 +19,7 @@ public static class PacketCreator
         {
             Marshal.StructureToPtr(RandPacket(), (nint)ptr, true);
 
-            ptr += Core.PacketSizeBytes;
+            ptr += Marshal.SizeOf<Packet>();
             i++;
         }
     }

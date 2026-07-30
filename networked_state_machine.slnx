@@ -5,4 +5,5 @@
     <Project Path="src/shared/shared.csproj" />
   </Folder>
   <Project Path="benchmarks/benchmarks.csproj" />
+  <Project Path="test/test.csproj" />
 </Solution>

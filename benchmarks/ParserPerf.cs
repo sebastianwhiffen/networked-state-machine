@@ -1,5 +1,5 @@
-using BenchmarkDotNet.Attributes;
 using NetworkedStateMachine.Server;
+using NetworkedStateMachine.Shared;
 
 namespace NetworkedStateMachine.Benchmarks;
 
@@ -37,7 +37,7 @@ public class ParserPerf
 
     //-----------------------------------------------------------------------
 
-    [IterationSetup(Target = nameof(ConsumePackets))]
+    [IterationSetup(Targets = [nameof(ConsumePackets)])]
     public unsafe void PacketSetup()
     {
         Core.Flush();
@@ -51,5 +51,6 @@ public class ParserPerf
 
     [Benchmark]
     public void ConsumePackets() => Core.ParsePendingPackets();
+
     //-----------------------------------------------------------------------
 }
