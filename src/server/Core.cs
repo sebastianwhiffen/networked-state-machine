@@ -46,7 +46,11 @@ public static class Core
         //if this fills up too often then double the array size.
         if (byteCount + InputBufWriteHead > BufMaxCount * PacketSizeBytes)
         {
-            throw new IndexOutOfRangeException($"Input buffer Overflow: inputs not being processed in time between frames. byteCount :{byteCount}, writeHead{InputBufWriteHead}, greater than {BufMaxCount * PacketSizeBytes}");
+            throw new IndexOutOfRangeException(
+                    $"Input buffer Overflow:" +
+                    $"inputs not being processed in time between frames. plix flix" +
+                    $"byteCount :{byteCount}, writeHead{InputBufWriteHead}, greater than {BufMaxCount * PacketSizeBytes}"
+            );
         }
 
         Array.Copy(bytes, 0, InputBuf, InputBufWriteHead, byteCount);

@@ -15,6 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="../src/client/client.csproj" />
         <ProjectReference Include="../src/server/server.csproj" />
         <ProjectReference Include="../src/shared/shared.csproj" />
     </ItemGroup>
