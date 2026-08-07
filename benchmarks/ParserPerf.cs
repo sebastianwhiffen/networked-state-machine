@@ -8,49 +8,42 @@ using BenchmarkDotNet.Attributes;
 [MemoryDiagnoser]
 public class ParserPerf
 {
+    Parser parser = new(); 
     private byte[] scratchBytes = null!;
-
-    public static IEnumerable<int> PacketCounts =>
-    [
-        1,
-        Core.BufMaxCount / 2,
-        Core.BufMaxCount
-    ];
 
     [ParamsSource(nameof(PacketCounts))]
     public int PacketCount { get; set; }
-
-    [IterationCleanup(Targets = new[] { nameof(WriteInputBuff), nameof(ConsumePackets) })]
-    public void Flush() => Core.Flush();
+    public static IEnumerable<int> PacketCounts => [ 1, Parser.BufMaxCount / 2, Parser.BufMaxCount ];
 
     //-----------------------------------------------------------------------
 
     [IterationSetup(Target = nameof(WriteInputBuff))]
     public unsafe void WriteSetup()
     {
-        scratchBytes = GC.AllocateArray<byte>(PacketCount * Core.PacketSizeBytes, pinned: true);
+        parser = new();
+        scratchBytes = GC.AllocateArray<byte>(PacketCount * Parser.PacketSizeBytes, pinned: true);
         fixed (byte* ptr = scratchBytes) PacketCreator.CopyRandomPackets(ptr, PacketCount);
     }
 
     [Benchmark]
-    public void WriteInputBuff() => Core.AppendInputBuf(scratchBytes, scratchBytes.Length);
+    public void WriteInputBuff() => parser.AppendInputBuf(scratchBytes, scratchBytes.Length);
 
     //-----------------------------------------------------------------------
 
     [IterationSetup(Targets = [nameof(ConsumePackets)])]
     public unsafe void PacketSetup()
     {
-        Core.Flush();
-        int byteCount = PacketCount * Core.PacketSizeBytes;
+        parser = new();
+        int byteCount = PacketCount * Parser.PacketSizeBytes;
 
         scratchBytes = GC.AllocateArray<byte>(byteCount, pinned: true);
         fixed (byte* ptr = scratchBytes) PacketCreator.CopyRandomPackets(ptr, PacketCount);
 
-        Core.AppendInputBuf(scratchBytes, byteCount);
+        parser.AppendInputBuf(scratchBytes, byteCount);
     }
 
     [Benchmark]
-    public void ConsumePackets() => Core.ParsePendingPackets();
+    public void ConsumePackets() => parser.ParsePendingPackets();
 
     //-----------------------------------------------------------------------
 }

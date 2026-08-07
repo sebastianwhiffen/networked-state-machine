@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace NetworkedStateMachine.Shared;
 
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct Packet(short mdx, short mdy, short a)
+public readonly record struct Packet(short mdx, short mdy, short a)
 {
     public readonly short MouseDeltaX = mdx;
     public readonly short MouseDeltaY = mdy;

@@ -24,5 +24,13 @@ public static class PacketCreator
         }
     }
 
+    public static string DebugPacksAsBytes(Packet[] ps)
+    {
+        ReadOnlySpan<byte> raw = MemoryMarshal.AsBytes(ps.AsSpan());
+        var formattedRows = raw.ToArray().Chunk(8).Select(row => string.Join(" ", row.Select(bite => bite.ToString("b8")))).ToList();
+        return string.Join("\n", formattedRows);
+
+    }
+
 }
 
