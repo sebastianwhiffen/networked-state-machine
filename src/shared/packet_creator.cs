@@ -6,7 +6,8 @@ public static class PacketCreator
 {
     static readonly Random rng = new();
 
-    public static Packet RandPacket() => new(
+    public static Packet RandPacket(short? nsm_id = null) => new(
+            nsm_id ?? (short)rng.Next(short.MinValue, short.MaxValue),
             (short)rng.Next(short.MinValue, short.MaxValue),
             (short)rng.Next(short.MinValue, short.MaxValue),
             (short)rng.Next(short.MinValue, short.MaxValue)

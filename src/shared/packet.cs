@@ -3,12 +3,12 @@ using System.Runtime.InteropServices;
 namespace NetworkedStateMachine.Shared;
 
 [StructLayout(LayoutKind.Sequential)]
-public readonly record struct Packet(short mdx, short mdy, short a)
+public readonly record struct Packet(short id, short mdx, short mdy, short a)
 {
+    public readonly short NSM_uid = id;
     public readonly short MouseDeltaX = mdx;
     public readonly short MouseDeltaY = mdy;
     public readonly short Actions = a;
-
 }
 
 [Flags]
