@@ -6,7 +6,7 @@ public static class PacketCreator
 {
     static readonly Random rng = new();
 
-    public static Packet RandPacket(short? nsm_id = null) => new(
+    public static NSM_Packet RandPacket(short? nsm_id = null) => new(
             nsm_id ?? (short)rng.Next(short.MinValue, short.MaxValue),
             (short)rng.Next(short.MinValue, short.MaxValue),
             (short)rng.Next(short.MinValue, short.MaxValue),
@@ -20,12 +20,12 @@ public static class PacketCreator
         {
             Marshal.StructureToPtr(RandPacket(), (nint)ptr, true);
 
-            ptr += Marshal.SizeOf<Packet>();
+            ptr += Marshal.SizeOf<NSM_Packet>();
             i++;
         }
     }
 
-    public static string DebugPacksAsBytes(Packet[] ps)
+    public static string DebugPacksAsBytes(NSM_Packet[] ps)
     {
         ReadOnlySpan<byte> raw = MemoryMarshal.AsBytes(ps.AsSpan());
         var formattedRows = raw.ToArray().Chunk(8).Select(row => string.Join(" ", row.Select(bite => bite.ToString("b8")))).ToList();

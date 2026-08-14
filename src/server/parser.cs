@@ -8,9 +8,9 @@ public class Parser
 {
     public const int BufMaxCount = 1024;
 
-    public static readonly int PacketSizeBytes = Unsafe.SizeOf<Packet>();
+    public static readonly int PacketSizeBytes = Unsafe.SizeOf<NSM_Packet>();
 
-    public readonly Packet[] ParsedPacks = new Packet[BufMaxCount];
+    public readonly NSM_Packet[] ParsedPacks = new NSM_Packet[BufMaxCount];
     int ParsedPackWriteHead = 0;
 
     readonly byte[] InputBuf = null;
@@ -60,7 +60,7 @@ public class Parser
     public void ParsePendingPackets()
     {
         ReadOnlySpan<byte> slice = InputBuf.AsSpan(InputBufReadHead, InputBufWriteHead);
-        ReadOnlySpan<Packet> packs = MemoryMarshal.Cast<byte, Packet>(slice);
+        ReadOnlySpan<NSM_Packet> packs = MemoryMarshal.Cast<byte, NSM_Packet>(slice);
 
         packs.CopyTo(ParsedPacks.AsSpan(ParsedPackWriteHead, packs.Length));
 

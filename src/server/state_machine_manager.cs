@@ -6,14 +6,15 @@ public class NSM_StateMachineManager()
 {
     private readonly List<NSM_StateMachine> _stateMachines;
 
-    public short AddStateMachine(NSM_StateMachine sm)
+    public NSM_UID AddStateMachine(NSM_StateMachine sm)
     {
         _stateMachines.Add(sm);
-        return sm.UID;
+        return sm.NSM_UID;
     }
 
-    private void RoutePacket(Packet p){
-       _stateMachines.First(sm => sm.UID == p.NSM_uid);
+    private void RoutePacket(NSM_Packet p)
+    {
+        _stateMachines.First(sm => sm.NSM_UID == (NSM_UID)p.NSM_UID);
     }
 
 }

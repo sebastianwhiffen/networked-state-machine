@@ -9,7 +9,7 @@ public class ParserTest
     [Fact]
     public void ValidParseTest()
     {
-        Packet[] expectedPackets = [.. Enumerable.Range(0, 100).Select(x => PacketCreator.RandPacket())];
+        NSM_Packet[] expectedPackets = [.. Enumerable.Range(0, 100).Select(x => PacketCreator.RandPacket())];
 
         var bytes = MemoryMarshal.AsBytes(expectedPackets.AsSpan());
 
@@ -18,7 +18,7 @@ public class ParserTest
         parser.AppendInputBuf(bytes, bytes.Length);
         parser.Tick();
 
-        Packet[] actualPackets = new Packet[expectedPackets.Length];
+        NSM_Packet[] actualPackets = new NSM_Packet[expectedPackets.Length];
         for (int i = 0; i < actualPackets.Length; i++)
         {
             actualPackets[i] = parser.ParsedPacks[i];

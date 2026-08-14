@@ -9,11 +9,11 @@ public class ClientTests
     [Fact]
     public void SendPacketThroughClient()
     {
-        Packet refPack = new();
-        Packet testPack = PacketCreator.RandPacket();
+        NSM_Packet refPack = new();
+        NSM_Packet testPack = PacketCreator.RandPacket();
 
         var t = new LocalTransporter();
-        t.AddListener("testListener", (beeees) => { refPack = MemoryMarshal.Read<Packet>(beeees); });
+        t.AddListener("testListener", (beeees) => { refPack = MemoryMarshal.Read<NSM_Packet>(beeees); });
 
         var client = new NSM_Client(t);
 
@@ -28,7 +28,7 @@ public class ClientTests
     [Fact]
     public void SendPacketThroughClientReceiveOnServer()
     {
-        Packet testPack = PacketCreator.RandPacket();
+        NSM_Packet testPack = PacketCreator.RandPacket();
 
         var p = new Parser();
         var t = new LocalTransporter();

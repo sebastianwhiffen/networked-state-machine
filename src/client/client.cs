@@ -7,7 +7,7 @@ public class NSM_Client(ITransport t)
 {
     private readonly ITransport _transport = t;
 
-    public void Send(ReadOnlySpan<Packet> p) => _transport.Send(MemoryMarshal.AsBytes(p));
+    public void Send(ReadOnlySpan<NSM_Packet> p) => _transport.Send(MemoryMarshal.AsBytes(p));
 
     public void AddServer(INSM_Server s) => _transport.AddListener(s.UID, s.GiveBytes);
 
