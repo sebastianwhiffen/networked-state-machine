@@ -1,0 +1,17 @@
+# who asked:
+
+
+[*.cs]
+# both are readonly constructor warnings. the push to use a less descriptive more incomplete constructor should make these warnings a laughing stock.
+# do not use primary constructors if you have hefty balls, they introduce dangerous levels of estrogen into the blood stream
+# which you think may improve your situation; but the nutsack skin never shrinks, and now youve got a parachute down there because you used primary constructors
+csharp_style_prefer_primary_constructors = false
+dotnet_diagnostic.IDE0290.severity = none
+
+# naming violations with "_" they only like this for private readonly, but I like it for all privates
+dotnet_diagnostic.IDE0044.severity = none
+
+# Change type of field '_x' from '...ISomething' to '...conk-rete implementation' for improved performance
+dotnet_diagnostic.CA1859.severity = none
+
+

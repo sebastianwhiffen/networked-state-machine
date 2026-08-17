@@ -13,18 +13,6 @@ public static class PacketCreator
             (short)rng.Next(short.MinValue, short.MaxValue)
     );
 
-    public unsafe static void CopyRandomPackets(byte* ptr, int count)
-    {
-        int i = 0;
-        while (i < count)
-        {
-            Marshal.StructureToPtr(RandPacket(), (nint)ptr, true);
-
-            ptr += Marshal.SizeOf<NSM_Packet>();
-            i++;
-        }
-    }
-
     public static string DebugPacksAsBytes(NSM_Packet[] ps)
     {
         ReadOnlySpan<byte> raw = MemoryMarshal.AsBytes(ps.AsSpan());

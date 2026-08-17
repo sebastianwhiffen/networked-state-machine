@@ -14,12 +14,10 @@ namespace NetworkedStateMachine.Shared;
 //
 //this now puts the burdeon on the client to operate on values referenced by these networked state machines
 
-
-
 public abstract class NSM_StateMachine<ReferenceType, InputType>
-(List<NSM_State> states, ReferenceType referenceObj) : NSM_StateMachine where ReferenceType : class
+(List<NSM_State> states) : NSM_StateMachine where ReferenceType : class
 {
-    private readonly ReferenceType _referenceObj = referenceObj;
+    internal ReferenceType? ReferenceObj { get; set; }
     private readonly List<NSM_State> _states = states;
 
     public abstract void ReceiveInput(InputType p);
@@ -27,10 +25,20 @@ public abstract class NSM_StateMachine<ReferenceType, InputType>
 
 public abstract class NSM_StateMachine
 {
-    public NSM_UID NSM_UID;
+    public NSM_UID NSM_UID { get; internal set; }
+
+    public abstract string Name { get; }
 
     public abstract void Tick();
 
+    internal Action StartCb { get; set; } = () =>
+    {
+        throw new Exception(
+            $"state machine tried to start before being initialized through the server." +
+            "please call (Client | Server).RegisterStateMachine");
+    };
+
+    public void Start() => StartCb();
 
     public abstract bool ChangeState(NSM_State newState);
 
@@ -67,4 +75,10 @@ public readonly record struct NSM_UID(short Value)
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static NSM_UID operator -(NSM_UID left, short right) => new((short)(left.Value - right));
+}
+
+
+public static class SM_Consts
+{
+    public const string DEFAULT_SM_NAME = "no_name_set";
 }

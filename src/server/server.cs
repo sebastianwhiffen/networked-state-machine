@@ -2,48 +2,53 @@ using NetworkedStateMachine.Shared;
 
 namespace NetworkedStateMachine.Server;
 
-public class NSM_Server
-(Parser? p = null, StateMachineManager? smm = null) : INSM_Server
+public class NSM_LocalServer : INSM_Server
 {
-    private readonly string _UID = new Guid().ToString();
-    public string UID => _UID;
+    private readonly string _GUID = new Guid().ToString();
+    public string GUID => _GUID;
 
-    private readonly Parser _parser = p ?? new();
-    private readonly StateMachineManager _smm = smm ?? new();
+    private readonly Parser _parser = new();
+    private readonly ITransport _transport = new LocalTransporter();
+    private readonly NSM_StateMachineManager _smm;
 
-    public void RegisterStateMachine(NSM_StateMachine stateMachine) => _smm.AddStateMachine(stateMachine);
+    public NSM_LocalServer() { }
+    public NSM_LocalServer(ITransport transport)
+    {
+        _transport = transport;
+        _smm = new(_transport);
+    }
+
+    /// <summary>
+    /// registers a state machine on this server, and all clients attatched to this server
+    /// </summary>
+
+    //the server should keep each of its clients up to date with the registered state machines.
+    //calling this will register the state machine on each added client.
+    //adding a client to a server will also cause the registered state machines to be added 
+    public void RegisterStateMachine(string keyName, Func<NSM_StateMachine> stateMachine) => _smm.RegisterStateMachine(keyName, stateMachine);
 
     public void GiveBytes(ReadOnlySpan<byte> bytes)
     {
         _parser.AppendInputBuf(bytes, bytes.Length);
+    }
+    public void Quit()
+    {
     }
 
     public void Tick()
     {
         _parser.Tick();
     }
-}
 
-public class StateMachineManager
-{
-    public readonly Dictionary<NSM_UID, NSM_StateMachine> _registeredStateMachines = [];
+    public List<string> GetManifest()
+    { 
+        return _smm.
+    }
 
-    public NSM_UID current_id;
-
-    //TODO: figure out if this is required by writing some tests?? 
-    //its an edge case I'm pre-worrying about rn
-    private readonly Lock _idLock = new();
-
-    public NSM_UID AddStateMachine(NSM_StateMachine sm)
+    public ITransport GetTransport()
     {
-        lock (_idLock)
-        {
-            NSM_UID id = current_id;
-            current_id = current_id++;
-
-            _registeredStateMachines[id] = sm;
-
-            return id;
-        }
+        throw new NotImplementedException();
     }
 }
+
+

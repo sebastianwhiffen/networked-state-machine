@@ -3,44 +3,44 @@ using NetworkedStateMachine.Shared;
 
 namespace NetworkedStateMachine.Client;
 
-public class NSM_Client(ITransport t)
+public class NSM_Client : INSM_Client
 {
-    private readonly ITransport _transport = t;
+    private ITransport _transport = new NoOpTransporter();
+    public ITransport Transport { get => _transport; private set => SetTransport(value); }
+
+    private readonly NSM_StateMachineManager _smm;
+
+    public NSM_Client()
+    {
+        _smm = new(_transport);
+    }
+
+    //will be filled with shit later no doubt, please put your shit here <3
+    private void SetTransport(ITransport transport)
+    {
+        _transport = transport;
+    }
 
     public void Send(ReadOnlySpan<NSM_Packet> p) => _transport.Send(MemoryMarshal.AsBytes(p));
 
-    public void AddServer(INSM_Server s) => _transport.AddListener(s.UID, s.GiveBytes);
-
-}
-
-public class LocalTransporter() : ITransport
-{
-    private readonly Dictionary<string, Action<ReadOnlySpan<byte>>> _listeners = [];
-
-    public void AddListener(string name, Action<ReadOnlySpan<byte>> l) => _listeners.Add(name, l);
-
-    public void Send(ReadOnlySpan<byte> p)
+    public void AddServer(INSM_Server s)
     {
-        foreach (var l in _listeners) l.Value(p);
+        s.GetManifest();
+        // SetTransport(s.GetTransport());
+        // _transport.AddListener(s.GUID, s.GiveBytes);
+    }
+
+    public T InstantiateStateMachine<T, RI, R>(string keyName, R ref_obj)
+    where T : NSM_StateMachine<R, RI>
+    where R : class
+    {
+        return _smm.InstantiateRegisteredSM<T, RI, R>(keyName, ref_obj);
+    }
+
+    public void RegisterStateMachine(string keyName, Func<NSM_StateMachine> stateMachine)
+    {
+        _smm.RegisterStateMachine(keyName, stateMachine);
     }
 }
 
-public class RemoteTransporter : ITransport
-{
-    public void AddListener(string name, Action<ReadOnlySpan<byte>> l)
-    {
-        throw new NotImplementedException();
-    }
 
-    public void Send(ReadOnlySpan<byte> packets)
-    {
-        throw new NotImplementedException();
-    }
-}
-
-public interface ITransport
-{
-    public void Send(ReadOnlySpan<byte> packets);
-
-    public void AddListener(string name, Action<ReadOnlySpan<byte>> l);
-}

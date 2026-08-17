@@ -10,22 +10,42 @@ public class StateMachineTests
     [Fact]
     public void RegisterStateMachines()
     {
-        var t = new LocalTransporter();
-        var client = new NSM_Client(t);
-        var server = new NSM_Server();
+        INSM_Client client = new NSM_Client();
+        INSM_Server server = new NSM_LocalServer();
 
-        var myDude = new MyGuy();
-        var sm = new MyStateMachine([new MyState1(), new MyState2()], myDude);
+        var myDude = new MyGuy(client);
+        var sm = () => { return new MyStateMachine([new MyState1(), new MyState2()]); };
 
-        server.RegisterStateMachine(sm);
+        server.RegisterStateMachine("MyStateMachineHaiii", sm);
+        client.RegisterStateMachine("MyStateMachineHaiii", sm);
 
         client.AddServer(server);
     }
 }
 
-public class MyGuy
+//most c# game engines do not support instantiating a script like this. 
+//use a global static instance of the client to call .CreateStateMachine
+//this is only test code
+public class MyGuy(INSM_Client client)
 {
-    public string DudesState { get; set; } = "none";
+    //the fact that this "can" be null according to roslyn makes my skin crawl 
+    private MyStateMachine _theDudesSM;
+
+    public int Velocity;
+    public int Position;
+
+    //or "start" if you're a chud who uses unity
+    public void Ready()
+    {
+        _theDudesSM = client.InstantiateStateMachine<MyStateMachine, MyGuysInputs, MyGuy>("MyStateMachineHaiii", this);
+        _theDudesSM.Start();
+    }
+
+    public void Tick()
+    {
+        _theDudesSM.Tick();
+    }
+
 }
 
 public class MyGuysInputs
@@ -40,7 +60,9 @@ public class MyGuysInputs
 
 public class MyStateMachine : NSM_StateMachine<MyGuy, MyGuysInputs>
 {
-    public MyStateMachine(List<NSM_State> states, MyGuy reference_obj) : base(states, reference_obj)
+    public override string Name { get; } = "MyStateMachine";
+
+    public MyStateMachine(List<NSM_State> states) : base(states)
     {
     }
 

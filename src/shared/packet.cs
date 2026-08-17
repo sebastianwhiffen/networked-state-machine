@@ -22,3 +22,55 @@ public enum InputAction : ushort
     Jump = 1 << 4,
     Attack = 1 << 5,
 }
+
+public class NSM_Manifest
+{
+    public List<string> UIDs;
+}
+
+
+public class LocalTransporter : ITransport
+{
+    public NSM_Manifest Manifest { get; set; } = new();
+
+    private readonly Dictionary<string, Action<ReadOnlySpan<byte>>> _listeners = [];
+    public void AddListener(string name, Action<ReadOnlySpan<byte>> l) => _listeners.Add(name, l);
+
+    public void Send(ReadOnlySpan<byte> p)
+    {
+        foreach (var l in _listeners) l.Value(p);
+    }
+}
+
+public class RemoteTransporter : ITransport
+{
+    public NSM_Manifest Manifest { get; set; } = new();
+
+    public void AddListener(string name, Action<ReadOnlySpan<byte>> l)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Send(ReadOnlySpan<byte> packets)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class NoOpTransporter : ITransport
+{
+    public NSM_Manifest Manifest { get; set; } = new();
+
+    public void AddListener(string name, Action<ReadOnlySpan<byte>> l) { }
+
+    public void Send(ReadOnlySpan<byte> packets) { }
+}
+
+public interface ITransport
+{
+    public void Send(ReadOnlySpan<byte> packets);
+
+    public void AddListener(string name, Action<ReadOnlySpan<byte>> l);
+
+    public NSM_Manifest Manifest { get; set; }
+}
