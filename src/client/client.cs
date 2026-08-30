@@ -5,41 +5,54 @@ namespace NetworkedStateMachine.Client;
 
 public class NSM_Client : INSM_Client
 {
-    private ITransport _transport = new NoOpTransporter();
-    public ITransport Transport { get => _transport; private set => SetTransport(value); }
-
     private readonly NSM_StateMachineManager _smm;
 
     public NSM_Client()
     {
-        _smm = new(_transport);
+        _smm = new NSM_StateMachineManager(new LocalTransporter());
     }
 
-    //will be filled with shit later no doubt, please put your shit here <3
-    private void SetTransport(ITransport transport)
+    public NSM_Client(NSM_StateMachineManager smm)
     {
-        _transport = transport;
+        _smm = smm;
     }
 
-    public void Send(ReadOnlySpan<NSM_Packet> p) => _transport.Send(MemoryMarshal.AsBytes(p));
+    public void Send(ReadOnlySpan<NSM_Packet> ps)
+    {
+        foreach (NSM_Packet p in ps)
+        {
+            _smm.RoutePacket(p);
+        }
+    }
 
+    // this should be checking if the client and the server contain the same state machines, 
+    // honestly this is extremely rough.
+    // if we let the client download state machines from the server you'll get RCE'd
+    //
+    // just set up the transports for now.
     public void AddServer(INSM_Server s)
     {
-        s.GetManifest();
-        // SetTransport(s.GetTransport());
-        // _transport.AddListener(s.GUID, s.GiveBytes);
     }
 
-    public T InstantiateStateMachine<T, RI, R>(string keyName, R ref_obj)
-    where T : NSM_StateMachine<R, RI>
-    where R : class
+    public T CreateStateMachineFor<T>(string keyName)
+    where T : NSM_StateMachine
     {
-        return _smm.InstantiateRegisteredSM<T, RI, R>(keyName, ref_obj);
+        return _smm.InstantiateRegisteredSM<T>(keyName);
     }
 
     public void RegisterStateMachine(string keyName, Func<NSM_StateMachine> stateMachine)
     {
         _smm.RegisterStateMachine(keyName, stateMachine);
+    }
+
+    public void Tick()
+    {
+        // _smm.Tick();
+    }
+
+    public void PhysTick(double delta)
+    {
+        
     }
 }
 

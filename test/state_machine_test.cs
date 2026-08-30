@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using NetworkedStateMachine.Client;
 using NetworkedStateMachine.Server;
@@ -7,45 +8,115 @@ namespace NetworkedStateMachine.Test;
 
 public class StateMachineTests
 {
+    TestTicker tt = new();
+
     [Fact]
     public void RegisterStateMachines()
     {
+        CancellationTokenSource cs = new();
+
         INSM_Client client = new NSM_Client();
         INSM_Server server = new NSM_LocalServer();
 
-        var myDude = new MyGuy(client);
-        var sm = () => { return new MyStateMachine([new MyState1(), new MyState2()]); };
+        // var myDude = new MyGuy(client);
+        // var sm = () => { return new MyStateMachine(myDude, [new IdleState(), new WalkingState()], new IdleState()); };
+        //
+        // string key = "MyStateMachineHaiii";
+        //
+        // server.RegisterStateMachine(key, sm);
+        // client.RegisterStateMachine(key, sm);
+        //
+        // client.AddServer(server);
 
-        server.RegisterStateMachine("MyStateMachineHaiii", sm);
-        client.RegisterStateMachine("MyStateMachineHaiii", sm);
+        tt.Tickables.AddRange([client, server]);
+        tt.Start(cs.Token);
 
-        client.AddServer(server);
     }
 }
 
-//most c# game engines do not support instantiating a script like this. 
-//use a global static instance of the client to call .CreateStateMachine
-//this is only test code
+
+public union UTickable(INSM_Server, INSM_Client)
+{
+    public void UPhysTick(double d)
+    {
+        switch (GetType())
+        {
+            case INSM_Server s: s.PhysTick(d); break;
+            case INSM_Client c: c.PhysTick(d); break;
+        }
+    }
+
+    public void UTick()
+    {
+        switch (GetType())
+        {
+            case INSM_Server s: s.Tick(); break;
+            case INSM_Client c: c.Tick(); break;
+        }
+    }
+}
+
+public class TestTicker
+{
+    public List<UTickable> Tickables = [];
+
+    public void Start(CancellationToken ct)
+    {
+        double time = 0.0;
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        double currentTime = 0.0;
+        double accumulatedFrameTime = 0.0;
+        double targetFrameTime = 1;
+
+        while (!ct.IsCancellationRequested)
+        {
+            double newTime = stopwatch.Elapsed.TotalSeconds;
+            double frameTimeDelta = newTime - currentTime;
+            currentTime = newTime;
+
+            accumulatedFrameTime += frameTimeDelta;
+
+            while (accumulatedFrameTime >= targetFrameTime)
+            {
+                accumulatedFrameTime -= targetFrameTime;
+                time += targetFrameTime;
+
+                Tickables.ForEach(x => x.UPhysTick(frameTimeDelta));
+            }
+
+            Tickables.ForEach(x => x.UTick());
+        }
+    }
+}
+
+
 public class MyGuy(INSM_Client client)
 {
     //the fact that this "can" be null according to roslyn makes my skin crawl 
     private MyStateMachine _theDudesSM;
 
-    public int Velocity;
-    public int Position;
+    public float Position;
 
-    //or "start" if you're a chud who uses unity
     public void Ready()
     {
-        _theDudesSM = client.InstantiateStateMachine<MyStateMachine, MyGuysInputs, MyGuy>("MyStateMachineHaiii", this);
-        _theDudesSM.Start();
+        _theDudesSM = client.CreateStateMachineFor<MyStateMachine>("MyStateMachineHaiii");
     }
 
     public void Tick()
     {
-        _theDudesSM.Tick();
+        _theDudesSM.SetInput(new MyGuysInputs() { MoveForward = 1.0f });
     }
 
+    public void PhysTick(double delta)
+    {
+        Position = _theDudesSM.GetReconciledValues().Position;
+    }
+
+}
+
+public class MyGuysAuthoritativeValues
+{
+    public int Position;
 }
 
 public class MyGuysInputs
@@ -58,34 +129,46 @@ public class MyGuysInputs
     public bool JumpHeld;
 }
 
-public class MyStateMachine : NSM_StateMachine<MyGuy, MyGuysInputs>
+public class MyStateMachine : NSM_StateMachine<MyGuy, MyGuysInputs, MyGuysAuthoritativeValues>
 {
     public override string Name { get; } = "MyStateMachine";
 
-    public MyStateMachine(List<NSM_State> states) : base(states)
+    public MyStateMachine(
+        MyGuy myGuy,
+        List<NSM_State> states,
+        NSM_State initialState
+    ) : base(myGuy, states, initialState) { }
+
+    public override bool ChangeState<StateType>()
     {
+        CurrentState = AvailableStates[typeof(StateType)];
+        return true;
     }
+}
 
-    public override bool ChangeState(NSM_State new_state)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void ReceiveInput(MyGuysInputs p)
-    {
-
-    }
-
+public class WalkingState : NSM_State<MyStateMachine>
+{
     public override void Tick()
     {
-        throw new NotImplementedException();
+        if (ParentStateMachine.LastInput.MoveForward == 0)
+        {
+            ParentStateMachine.ChangeState<IdleState>();
+        }
+
+        ParentStateMachine.ReferenceObj.Position += ParentStateMachine.LastInput.MoveForward;
     }
 }
 
-public class MyState1 : NSM_State
+public class IdleState : NSM_State<MyStateMachine>
 {
-}
-public class MyState2 : NSM_State
-{
+    //I think this will ignore the input and not apply it. could be a problem. 
+    //would I have to tick the new state on each transition?
+    public override void Tick()
+    {
+        if (ParentStateMachine.LastInput.MoveForward > 0)
+        {
+            ParentStateMachine.ChangeState<WalkingState>();
+        }
+    }
 }
 
