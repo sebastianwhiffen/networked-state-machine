@@ -16,24 +16,24 @@ namespace NetworkedStateMachine.Shared;
 public abstract class NSM_StateMachine<ReferenceType, InputType, ReconcilableType>
 : NSM_StateMachine where ReferenceType : class
 {
-    public InputType LastInput;
-    public ReconcilableType LastReconciliation;
-
-    public readonly ReferenceType ReferenceObj;
+    public ReconcilableType? LastReconciliation;
     public readonly Dictionary<Type, NSM_State> AvailableStates;
 
-    public NSM_StateMachine(ReferenceType r, List<NSM_State> states, NSM_State initialState) : base(initialState)
+
+    public NSM_StateMachine(List<NSM_State> states, NSM_State initialState) : base(initialState)
     {
-        ReferenceObj = r;
         AvailableStates = states.ToDictionary(s => s.GetType(), s => s);
     }
 
-    public void SetInput(InputType input)
+    public void SetTransportBuffer(ref Span<NSM_Packet> tb)
     {
-        LastInput = input;
     }
 
-    public ReconcilableType GetReconciledValues()
+    public void PushInput(InputType input)
+    {
+    }
+
+    public ReconcilableType? GetReconciledValues()
     {
         return LastReconciliation;
     }
@@ -51,6 +51,8 @@ public abstract class NSM_StateMachine
     }
 
     public void Tick() => CurrentState.Tick();
+
+    public void PhysTick(double d) => CurrentState.PhysTick(d);
 
     public abstract bool ChangeState<NewStateType>() where NewStateType : NSM_State;
 
@@ -73,6 +75,7 @@ public abstract class NSM_State
 {
     public short UID;
     public abstract void Tick();
+    public abstract void PhysTick(double d);
 };
 
 //its just a short, they should really add a "NSM_UID : short" syntax

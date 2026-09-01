@@ -3,6 +3,11 @@ using NetworkedStateMachine.Shared;
 
 namespace NetworkedStateMachine.Client;
 
+public class NetBuffer
+{
+    private readonly Memory<NSM_Packet> _netBuff;
+}
+
 public class NSM_Client : INSM_Client
 {
     private readonly NSM_StateMachineManager _smm;
@@ -52,7 +57,11 @@ public class NSM_Client : INSM_Client
 
     public void PhysTick(double delta)
     {
-        
+    }
+
+    public void RegisterStateMachine<T>(string keyName, Func<T> stateMachine) where T : NSM_StateMachine
+    {
+        _smm.RegisterStateMachine(keyName, stateMachine);
     }
 }
 

@@ -8,8 +8,6 @@ namespace NetworkedStateMachine.Test;
 
 public class StateMachineTests
 {
-    TestTicker tt = new();
-
     [Fact]
     public void RegisterStateMachines()
     {
@@ -18,98 +16,44 @@ public class StateMachineTests
         INSM_Client client = new NSM_Client();
         INSM_Server server = new NSM_LocalServer();
 
-        // var myDude = new MyGuy(client);
-        // var sm = () => { return new MyStateMachine(myDude, [new IdleState(), new WalkingState()], new IdleState()); };
-        //
-        // string key = "MyStateMachineHaiii";
-        //
-        // server.RegisterStateMachine(key, sm);
-        // client.RegisterStateMachine(key, sm);
-        //
-        // client.AddServer(server);
+        var sm = () => { return new MyStateMachine([new IdleState(), new WalkingState()], new IdleState()); };
 
-        tt.Tickables.AddRange([client, server]);
-        tt.Start(cs.Token);
+        client.RegisterStateMachine("myStateMachine", sm);
+
+        var myDude = new MyGuy(client);
+        myDude.Ready();
+
+        var clientThread = new Thread(() => FixedStepTicker.Start([client, myDude]));
+        var serverThread = new Thread(() => FixedStepTicker.Start([server]));
+
+        clientThread.Start();
+        serverThread.Start();
+
+        clientThread.Join();
 
     }
 }
-
-
-public union UTickable(INSM_Server, INSM_Client)
-{
-    public void UPhysTick(double d)
-    {
-        switch (GetType())
-        {
-            case INSM_Server s: s.PhysTick(d); break;
-            case INSM_Client c: c.PhysTick(d); break;
-        }
-    }
-
-    public void UTick()
-    {
-        switch (GetType())
-        {
-            case INSM_Server s: s.Tick(); break;
-            case INSM_Client c: c.Tick(); break;
-        }
-    }
-}
-
-public class TestTicker
-{
-    public List<UTickable> Tickables = [];
-
-    public void Start(CancellationToken ct)
-    {
-        double time = 0.0;
-        Stopwatch stopwatch = Stopwatch.StartNew();
-        double currentTime = 0.0;
-        double accumulatedFrameTime = 0.0;
-        double targetFrameTime = 1;
-
-        while (!ct.IsCancellationRequested)
-        {
-            double newTime = stopwatch.Elapsed.TotalSeconds;
-            double frameTimeDelta = newTime - currentTime;
-            currentTime = newTime;
-
-            accumulatedFrameTime += frameTimeDelta;
-
-            while (accumulatedFrameTime >= targetFrameTime)
-            {
-                accumulatedFrameTime -= targetFrameTime;
-                time += targetFrameTime;
-
-                Tickables.ForEach(x => x.UPhysTick(frameTimeDelta));
-            }
-
-            Tickables.ForEach(x => x.UTick());
-        }
-    }
-}
-
 
 public class MyGuy(INSM_Client client)
 {
-    //the fact that this "can" be null according to roslyn makes my skin crawl 
     private MyStateMachine _theDudesSM;
 
     public float Position;
 
     public void Ready()
     {
-        _theDudesSM = client.CreateStateMachineFor<MyStateMachine>("MyStateMachineHaiii");
+        _theDudesSM = client.CreateStateMachineFor<MyStateMachine>("myStateMachine");
     }
 
     public void Tick()
     {
-        _theDudesSM.SetInput(new MyGuysInputs() { MoveForward = 1.0f });
+        _theDudesSM.PushInput(new MyGuysInputs() { MoveForward = 1.0f });
     }
 
     public void PhysTick(double delta)
     {
-        Position = _theDudesSM.GetReconciledValues().Position;
+        Position = _theDudesSM.GetReconciledValues()?.Position ?? 1;
+        Console.WriteLine(Position);
     }
 
 }
@@ -134,10 +78,9 @@ public class MyStateMachine : NSM_StateMachine<MyGuy, MyGuysInputs, MyGuysAuthor
     public override string Name { get; } = "MyStateMachine";
 
     public MyStateMachine(
-        MyGuy myGuy,
         List<NSM_State> states,
         NSM_State initialState
-    ) : base(myGuy, states, initialState) { }
+    ) : base(states, initialState) { }
 
     public override bool ChangeState<StateType>()
     {
@@ -172,3 +115,57 @@ public class IdleState : NSM_State<MyStateMachine>
     }
 }
 
+public union UTickable(INSM_Server, INSM_Client, MyGuy)
+{
+    public void UPhysTick(double d)
+    {
+        switch (this)
+        {
+            case INSM_Server s: s.PhysTick(d); break;
+            case INSM_Client c: c.PhysTick(d); break;
+            case MyGuy g: g.PhysTick(d); break;
+        }
+    }
+
+    public void UTick()
+    {
+        switch (this)
+        {
+            case INSM_Server s: s.Tick(); break;
+            case INSM_Client c: c.Tick(); break;
+            case MyGuy g: g.Tick(); break;
+        }
+    }
+}
+
+//https://gafferongames.com/post/fix_your_timestep/
+public static class FixedStepTicker
+{
+    public static void Start(List<UTickable> tickable)
+    {
+        double time = 0.0;
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        double currentTime = 0.0;
+        double accumulatedFrameTime = 0.0;
+        double targetFrameTime = 1;
+
+        while (true)
+        {
+            double newTime = stopwatch.Elapsed.TotalSeconds;
+            double frameTimeDelta = newTime - currentTime;
+            currentTime = newTime;
+
+            accumulatedFrameTime += frameTimeDelta;
+
+            while (accumulatedFrameTime >= targetFrameTime)
+            {
+                accumulatedFrameTime -= targetFrameTime;
+                time += targetFrameTime;
+
+                tickable.ForEach(x => x.UPhysTick(frameTimeDelta));
+            }
+
+            tickable.ForEach(x => x.UTick());
+        }
+    }
+}

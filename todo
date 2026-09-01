@@ -1,0 +1,11 @@
+
+todos:
+
+ticker :tick:
+
+add state machine to client and have it tick :pensive:
+
+store a buffer of inputs from all NSMs, 
+send buffer on client/server phys ticks
+
+this will be containing multiple types of data, so we also need a way to serialize it when received

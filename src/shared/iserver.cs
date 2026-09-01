@@ -17,7 +17,8 @@ public interface INSM_Client
     public void PhysTick(double delta);
     public void Tick();
 
-    public void RegisterStateMachine(string keyName, Func<NSM_StateMachine> stateMachine);
+    //I probably want this to be like the websdks DI container later (singleton vs scoped)
+    public void RegisterStateMachine<T>(string keyName, Func<T> stateMachine) where T : NSM_StateMachine;
 
     /// <summary>
     /// Uses the internal factory to instantiate a new state machine for the object you wish to pair it with.
