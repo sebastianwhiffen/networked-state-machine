@@ -8,4 +8,29 @@ add state machine to client and have it tick :pensive:
 store a buffer of inputs from all NSMs, 
 send buffer on client/server phys ticks
 
-this will be containing multiple types of data, so we also need a way to serialize it when received
+
+
+what do I want the api to look like? and do?
+
+*auto reconciling* from the server
+client side prediction not needed when using *local server*
+Type safe reconciliation payloads
+Type safe inputs
+State machines created alongside game objects
+New machine with shared behaviours between client and server.
+for example level, player, ai, level logic.
+
+it is suggested to use one hub instance per client.
+also one on the server
+
+each NSM registered on the server will need to be replicated/required per client.
+
+
+
+var hub = await StreamingHubClient.ConnectAsync<IChatHub, IChatHubReceiver>(channel, new ChatHubReceiver(sessionId));
+
+var client = await NSM_Client.ConnectAsync<IChatHub, IChatHubReceiver>(hub);
+
+var sm = client.CreateNSM<IMyNSM>();
+
+sm.PhysTick();

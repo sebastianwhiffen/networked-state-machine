@@ -93,13 +93,9 @@ public class WalkingState : NSM_State<MyStateMachine>
 {
     public override void Tick()
     {
-        if (ParentStateMachine.LastInput.MoveForward == 0)
-        {
-            ParentStateMachine.ChangeState<IdleState>();
-        }
-
-        ParentStateMachine.ReferenceObj.Position += ParentStateMachine.LastInput.MoveForward;
     }
+
+    public override void PhysTick(double delta) { }
 }
 
 public class IdleState : NSM_State<MyStateMachine>
@@ -108,10 +104,11 @@ public class IdleState : NSM_State<MyStateMachine>
     //would I have to tick the new state on each transition?
     public override void Tick()
     {
-        if (ParentStateMachine.LastInput.MoveForward > 0)
-        {
-            ParentStateMachine.ChangeState<WalkingState>();
-        }
+
+    }
+
+    public override void PhysTick(double delta) {
+        
     }
 }
 

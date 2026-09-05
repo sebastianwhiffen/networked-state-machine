@@ -1,12 +1,6 @@
-﻿using System.Runtime.InteropServices;
-using NetworkedStateMachine.Shared;
+﻿using NetworkedStateMachine.Shared;
 
 namespace NetworkedStateMachine.Client;
-
-public class NetBuffer
-{
-    private readonly Memory<NSM_Packet> _netBuff;
-}
 
 public class NSM_Client : INSM_Client
 {
