@@ -1,9 +1,9 @@
 <Solution>
-  <Folder Name="/src/">
     <Project Path="src/client/client.csproj" />
     <Project Path="src/server/server.csproj" />
     <Project Path="src/shared/shared.csproj" />
-  </Folder>
-  <Project Path="benchmarks/benchmarks.csproj" />
-  <Project Path="test/test.csproj" />
+    <Project Path="src/NetworkedStateMachine.Client.Generator/NetworkedStateMachine.Client.Generator.csproj" />
+
+    <Project Path="benchmarks/benchmarks.csproj" />
+    <Project Path="test/NetworkedStateMachine.Client.Generator.Test/NetworkedStateMachine.Client.Generator.Test.csproj " />
 </Solution>

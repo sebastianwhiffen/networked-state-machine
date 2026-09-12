@@ -1,8 +1,10 @@
 
 todos:
 
-ticker :tick:
+-- taking a massive step back with my week away.
+it seems appropriate for me to use a source generator to achieve the magic
 
+ticker :tick:
 add state machine to client and have it tick :pensive:
 
 store a buffer of inputs from all NSMs, 
@@ -14,14 +16,12 @@ what do I want the api to look like? and do?
 
 *auto reconciling* from the server
 client side prediction not needed when using *local server*
+when using a server; other clients reconcile their SMs <-- this needs looking into 
 Type safe reconciliation payloads
 Type safe inputs
 State machines created alongside game objects
 New machine with shared behaviours between client and server.
 for example level, player, ai, level logic.
-
-it is suggested to use one hub instance per client.
-also one on the server
 
 each NSM registered on the server will need to be replicated/required per client.
 
@@ -29,8 +29,9 @@ each NSM registered on the server will need to be replicated/required per client
 
 var hub = await StreamingHubClient.ConnectAsync<IChatHub, IChatHubReceiver>(channel, new ChatHubReceiver(sessionId));
 
-var client = await NSM_Client.ConnectAsync<IChatHub, IChatHubReceiver>(hub);
+static global var client = await NSM_Client.ConnectAsync<IChatHub, IChatHubReceiver>(hub);
 
 var sm = client.CreateNSM<IMyNSM>();
 
+sm.PushInput(new(this.keypressW))
 sm.PhysTick();

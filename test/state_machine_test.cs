@@ -11,25 +11,25 @@ public class StateMachineTests
     [Fact]
     public void RegisterStateMachines()
     {
-        CancellationTokenSource cs = new();
-
-        INSM_Client client = new NSM_Client();
-        INSM_Server server = new NSM_LocalServer();
-
-        var sm = () => { return new MyStateMachine([new IdleState(), new WalkingState()], new IdleState()); };
-
-        client.RegisterStateMachine("myStateMachine", sm);
-
-        var myDude = new MyGuy(client);
-        myDude.Ready();
-
-        var clientThread = new Thread(() => FixedStepTicker.Start([client, myDude]));
-        var serverThread = new Thread(() => FixedStepTicker.Start([server]));
-
-        clientThread.Start();
-        serverThread.Start();
-
-        clientThread.Join();
+        // CancellationTokenSource cs = new();
+        //
+        // INSM_Client client = new NSM_Client();
+        // INSM_Server server = new NSM_LocalServer();
+        //
+        // var sm = () => { return new MyStateMachine([new IdleState(), new WalkingState()], new IdleState()); };
+        //
+        // client.RegisterStateMachine("myStateMachine", sm);
+        //
+        // var myDude = new MyGuy(client);
+        // myDude.Ready();
+        //
+        // var clientThread = new Thread(() => FixedStepTicker.Start([client, myDude]));
+        // var serverThread = new Thread(() => FixedStepTicker.Start([server]));
+        //
+        // clientThread.Start();
+        // serverThread.Start();
+        //
+        // clientThread.Join();
 
     }
 }
